@@ -25,8 +25,16 @@ export async function signup(req, res) {
             return res.status(400).json({ message: "Email already exists, please use a different email"});
         }
 
-        const idx = Math.floor(Math.random()*100)+1; //1-100
-        const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`; //random avatar from iran.liara.run
+        const softColors = ['fcd34d', 'fca5a5', '6ee7b7', 'a5b4fc', 'f9a8d4', 'bfdbfe'];
+
+        const getRandomColor = () => {
+            const idx = Math.floor(Math.random() * softColors.length);
+            return softColors[idx];
+        };
+
+        const bgColor = getRandomColor();
+    
+        const randomAvatar = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=Brian&backgroundColor=${bgColor}`;
 
         const newUser = await User.create({
             email,
@@ -105,5 +113,47 @@ export async function logout(req, res) {
 }
 
 export async function onboard(req, res) {
-    
+    try{
+        const userId = req.user._id;
+
+        const {fullName, bio, nativeLanguage, learningLanguage, location} = req.body;
+
+        if(!fullName || !bio || !nativeLanguage || !learningLanguage || !location){
+            return res.status(400).json({
+                message: "All fields are required",
+                missingFields: [
+                    !fullName && 'fullName',
+                    !bio && 'bio',
+                    !nativeLanguage && 'nativeLanguage',
+                    !learningLanguage && 'learningLanguage',
+                    !location && 'location',
+                ].filter(Boolean),
+            });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(userId, {
+            ...req.body,
+            isOnboarded: true
+        }, {new: true})
+
+        if(!updatedUser) return res.status(404).json({message: 'User not found'});
+
+        try{
+            await upsertStreamUser({
+                id: updatedUser.id.toString(),
+                name: updatedUser.fullName,
+                image: updatedUser.profilePic || "",
+            })
+            console.log(`Stream user updated after onboarding for ${updatedUser.fullName}`);
+        } catch(streamError){
+            console.log("Error updating Stream user during onboarding:", streamError.message);
+        }
+
+        
+
+        res.status(200).json({success: true, user: updatedUser});
+    } catch(error){
+        console.error("Onboarding error: ", error);
+        res.status(500).json({message: "Im\nternal Server Error"});
+    }
 }
