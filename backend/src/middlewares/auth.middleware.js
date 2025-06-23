@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { createDraftTextComposerCompositionMiddleware } from 'stream-chat';
 
 export const protectRoute = async (req, res, next) => {
     try{
