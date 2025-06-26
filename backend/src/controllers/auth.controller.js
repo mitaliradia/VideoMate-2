@@ -154,6 +154,6 @@ export async function onboard(req, res) {
         res.status(200).json({success: true, user: updatedUser});
     } catch(error){
         console.error("Onboarding error: ", error);
-        res.status(500).json({message: "Im\nternal Server Error"});
+        res.status(500).json({message: "Internal Server Error"});
     }
 }
