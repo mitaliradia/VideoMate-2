@@ -6,6 +6,8 @@ import SignUpPage from './pages/SignUpPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import OnboardingPage from './pages/OnboardingPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
+import FriendsPage from './pages/FriendsPage.jsx';
+import TranslationDemo from './pages/TranslationDemo.jsx';
 import ChatPage from './pages/ChatPage.jsx';
 import CallPage from './pages/CallPage.jsx';
 import toast,{ Toaster } from 'react-hot-toast';
@@ -27,7 +29,7 @@ const App = () => {
   
 
   return (
-    <div className='h-screen' data-theme={theme}>
+    <div className='min-h-screen bg-base-100' data-theme={theme}>
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
         <Route path='/' element={isAuthenticated  && isOnboarded ? (
@@ -62,6 +64,26 @@ const App = () => {
           }
         />
         <Route 
+          path='/friends' 
+          element={isAuthenticated && isOnboarded ? (
+            <Layout showSidebar={true}>
+              <FriendsPage />
+            </Layout>
+          ) : (
+            <Navigate to={!isAuthenticated ? '/login' : '/onboarding'} />
+          )}
+        />
+        <Route 
+          path='/translation-demo' 
+          element={isAuthenticated && isOnboarded ? (
+            <Layout showSidebar={true}>
+              <TranslationDemo />
+            </Layout>
+          ) : (
+            <Navigate to={!isAuthenticated ? '/login' : '/onboarding'} />
+          )}
+        />
+        <Route 
           path='/notifications' 
           element={isAuthenticated && isOnboarded ? (
             <Layout showSidebar={true}>
@@ -90,6 +112,11 @@ const App = () => {
           ) : (
             <Navigate to={!isAuthenticated ? '/login' : '/onboarding'} />
           )}
+        />
+        {/* Catch-all route for undefined paths */}
+        <Route 
+          path='*' 
+          element={<Navigate to='/' replace />}
         />
       </Routes>
       

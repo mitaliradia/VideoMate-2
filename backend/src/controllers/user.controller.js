@@ -4,22 +4,50 @@ import FriendRequest from "../models/FriendRequest.js";
 export async function getRecommendedUsers(req,res){
     try{
         const currentUserId = req.user.id;
-        //const currentUser = await User.findById(currentUserId); or
         const currentUser = req.user;
 
-        const recommendedUsers = await User.find({
+        // Get all eligible users first
+        const allUsers = await User.find({
             $and: [
                 {_id: {$ne: currentUserId}},  //exclude current user
                 {_id: {$nin: currentUser.friends}},  //exclude current user's friends
                 {isOnboarded: true}
             ]
-        })
+        });
 
-        res.status(200).json(recommendedUsers);
+        // Sort users by language match quality in JavaScript
+        const sortedUsers = allUsers.sort((a, b) => {
+            // Check if user 'a' is a perfect match
+            const aPerfectMatch = a.nativeLanguage === currentUser.learningLanguage && 
+                                 a.learningLanguage === currentUser.nativeLanguage;
+            
+            // Check if user 'b' is a perfect match
+            const bPerfectMatch = b.nativeLanguage === currentUser.learningLanguage && 
+                                 b.learningLanguage === currentUser.nativeLanguage;
+            
+            // Perfect matches come first
+            if (aPerfectMatch && !bPerfectMatch) return -1;
+            if (!aPerfectMatch && bPerfectMatch) return 1;
+            
+            // Check partial matches
+            const aPartialMatch = a.nativeLanguage === currentUser.learningLanguage || 
+                                 a.learningLanguage === currentUser.nativeLanguage;
+            
+            const bPartialMatch = b.nativeLanguage === currentUser.learningLanguage || 
+                                 b.learningLanguage === currentUser.nativeLanguage;
+            
+            // Partial matches come second
+            if (aPartialMatch && !bPartialMatch) return -1;
+            if (!aPartialMatch && bPartialMatch) return 1;
+            
+            // If same match type, maintain original order
+            return 0;
+        });
+
+        res.status(200).json(sortedUsers);
     } catch(error){
         console.error("Error in getRecommendedUsers controller", error.message);
-
-        res.status(500).json({message: "Interval Server Error"});
+        res.status(500).json({message: "Internal Server Error"});
     }
 } 
 

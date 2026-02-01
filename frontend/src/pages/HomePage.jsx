@@ -1,19 +1,39 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useEffect, useState } from 'react'
-import { getUserFriends, getRecommendedUsers, getOutgoingFriendReqs, sendFriendRequest } from '../lib/api';
-import { CheckCircleIcon, MapPinIcon, UserPlusIcon, UsersIcon } from 'lucide-react';
+import { getRecommendedUsers, getOutgoingFriendReqs, sendFriendRequest } from '../lib/api';
+import { CheckCircleIcon, MapPinIcon, UserPlusIcon, UsersIcon, StarIcon, BellIcon } from 'lucide-react';
 import { Link } from 'react-router';
-import FriendCard, { getLanguageFlag } from '../components/FriendCard';
-import NoFriendsFound from '../components/NoFriendsFound';
+import { getLanguageFlag } from '../components/FriendCard';
+import useAuthUser from '../hooks/useAuthUser';
 
 const HomePage = () => {
   const queryClient = useQueryClient();
   const [outgoingRequestsId, setOutgoingRequestsIds] = useState(new Set());
+  const { authUser } = useAuthUser();
 
-  const {data:friends=[],isLoading: loadingFriends} = useQuery({
-    queryKey: ['friends'],
-    queryFn: getUserFriends
-  })
+  // Function to check language match quality
+  const getLanguageMatchType = (user) => {
+    if (!authUser) return 'none';
+    
+    // Convert to lowercase for case-insensitive comparison
+    const userNative = user.nativeLanguage?.toLowerCase();
+    const userLearning = user.learningLanguage?.toLowerCase();
+    const myNative = authUser.nativeLanguage?.toLowerCase();
+    const myLearning = authUser.learningLanguage?.toLowerCase();
+    
+    console.log('Checking match for:', user.fullName);
+    console.log('User languages:', { native: userNative, learning: userLearning });
+    console.log('My languages:', { native: myNative, learning: myLearning });
+    
+    const perfectMatch = userNative === myLearning && userLearning === myNative;
+    const partialMatch = userNative === myLearning || userLearning === myNative;
+    
+    console.log('Match results:', { perfectMatch, partialMatch });
+    
+    if (perfectMatch) return 'perfect';
+    if (partialMatch) return 'partial';
+    return 'none';
+  };
 
   const {data:recommendedUsers=[],isLoading: loadingUsers} = useQuery({
     queryKey: ['users'],
@@ -43,36 +63,31 @@ const HomePage = () => {
     <div className='p-4 sm:p-6 lg:p-8'>
       <div className='container mx-auto space-y-10'>
         <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
-          <h2 className='text-2x; sm:text-3xl font-bold tracking-tight'>Your Friends</h2>
-          <Link to='/notifications' className='btn btn-outline btn-sm'>
-            <UsersIcon className='mr-2 size-4' />
-            Friend Requests
-          </Link>
+          <div>
+            <h1 className='text-2xl sm:text-3xl font-bold tracking-tight'>Discover Language Partners</h1>
+            <p className='text-base-content opacity-70 mt-1'>
+              Find perfect language exchange partners based on your learning goals
+            </p>
+          </div>
+          <div className='flex gap-3'>
+            <Link to='/friends' className='btn btn-outline btn-sm'>
+              <UsersIcon className='mr-2 size-4' />
+              My Friends
+            </Link>
+            <Link to='/notifications' className='btn btn-primary btn-sm'>
+              <BellIcon className='mr-2 size-4' />
+              Friend Requests
+            </Link>
+          </div>
         </div>
-
-        {loadingFriends ? (
-          <div className='flex justify-center justify-content py-12'>
-            <span className='loading loading-spinner loading-lg' />
-          </div>
-        ) : friends.length===0 ? (
-          <NoFriendsFound />
-        ) : (
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-          {
-            friends.map((friend) => (
-              <FriendCard key={friend._id} friend={friend} />
-            ))
-          }
-          </div>
-        )}
 
         <section>
           <div className='mb-6 sm:mb-8'>
             <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
               <div>
-                <h2 className='text-2xl sm:text-3xl font-bold tracking-tight'>Meet New Learners</h2>
+                <h2 className='text-2xl sm:text-3xl font-bold tracking-tight'>Recommended for You</h2>
                 <p className='opacity-70'>
-                  Discover perfect language exchnage partners based on your profile
+                  Smart matches based on your language learning goals
                 </p>
               </div>
             </div>
@@ -111,6 +126,28 @@ const HomePage = () => {
                           )}
                         </div>
                       </div>
+
+                      {/*Language Match Indicator*/}
+                      {(() => {
+                        const matchType = getLanguageMatchType(user);
+                        
+                        if (matchType === 'perfect') {
+                          return (
+                            <div className='flex items-center gap-1 text-green-600 text-sm font-medium'>
+                              <StarIcon className='size-4 fill-current' />
+                              Perfect Language Match!
+                            </div>
+                          );
+                        } else if (matchType === 'partial') {
+                          return (
+                            <div className='flex items-center gap-1 text-blue-600 text-sm'>
+                              <StarIcon className='size-4' />
+                              Good Language Match
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
 
                       {/*Languages with flags*/}
                       <div className='flex flex-wrap gap-1.5'>
