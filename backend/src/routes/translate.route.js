@@ -6,13 +6,13 @@ const router = express.Router();
 
 router.post('/translate', protectRoute, async (req, res) => {
     try {
-        const { text, targetLanguage } = req.body;
+        const { text, targetLanguage, messageId } = req.body;
         
         if (!text || !targetLanguage) {
             return res.status(400).json({ message: 'Text and target language are required' });
         }
 
-        const result = await translateText(text, targetLanguage);
+        const result = await translateText(text, targetLanguage, messageId);
         res.status(200).json(result);
     } catch (error) {
         console.error('Translation error:', error);

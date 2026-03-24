@@ -15,7 +15,8 @@ const TranslationToggle = ({ message, userLanguage }) => {
 
         setIsLoading(true);
         try {
-            const result = await translateMessage(message.text, userLanguage);
+            const messageId = message._id || message.id;
+            const result = await translateMessage(message.text, userLanguage, messageId);
             setTranslatedText(result.translatedText);
             setIsTranslated(true);
         } catch (error) {

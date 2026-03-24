@@ -12,6 +12,12 @@ const friendRequestSchema = new mongoose.Schema(
             ref: 'User',
             required: true,
         },
+        pairKey: {
+            type: String,
+            required: true,
+            unique: true,
+            index: true,
+        },
         status: {
             type: String,
             enum: ['pending','accepted'],
@@ -24,6 +30,19 @@ const friendRequestSchema = new mongoose.Schema(
 
     
 );
+
+friendRequestSchema.pre('validate', function (next) {
+    if (this.sender && this.recipient) {
+        const senderId = this.sender.toString();
+        const recipientId = this.recipient.toString();
+
+        this.pairKey = senderId < recipientId
+            ? `${senderId}:${recipientId}`
+            : `${recipientId}:${senderId}`;
+    }
+
+    next();
+});
 
 const FriendRequest = mongoose.model("FriendRequest", friendRequestSchema);
 

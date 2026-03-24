@@ -84,22 +84,22 @@ export async function sendFriendRequest(req,res){
             return res.status(400).json({message: "You are already friends with this user"});
         }
 
-        //check if a req already exists
-        const existingRequest = await FriendRequest.findOne({
-            $or: [
-               {sender: myId, recipient: recipientId},
-               {sender: recipientId, recipient: myId}, 
-            ],
-        });
+        let friendRequest;
 
-        if(existingRequest){
-            return res.status(400).json({message: "A friend request already exists between you and this user"})
+        try {
+            friendRequest = await FriendRequest.create({
+                sender: myId,
+                recipient: recipientId,
+            });
+        } catch (dbError) {
+            if (dbError?.code === 11000 && dbError?.keyPattern?.pairKey) {
+                return res.status(409).json({
+                    message: "A friend request already exists between you and this user",
+                });
+            }
+
+            throw dbError;
         }
-
-        const friendRequest = await FriendRequest.create({
-            sender: myId,
-            recipient: recipientId,
-        });
 
         res.status(201).json(friendRequest)
     } catch(error){
